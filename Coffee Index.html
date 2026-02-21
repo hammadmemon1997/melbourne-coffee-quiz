@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Melbourne Coffee Personality Quiz</title>
+  <meta name="description" content="What does your coffee order say about you? Take Melbourne's most accurate (and most fun) coffee personality quiz." />
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --espresso: #1a0a00;
+      --roast: #3d1c02;
+      --caramel: #c47d2b;
+      --cream: #f5ede0;
+      --foam: #fdf6ee;
+      --steam: #e8ddd0;
+      --text: #1a0a00;
+      --muted: #7a5c3e;
+      --white: #ffffff;
+      --matcha: #4a7c59;
+      --chai: #c0622a;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--cream);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Steam */
+    .steam-bg {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .steam-particle {
+      position: absolute; bottom: -20px; width: 3px;
+      background: linear-gradient(to top, transparent, rgba(196,125,43,0.07), transparent);
+      border-radius: 50%; animation: rise linear infinite;
+    }
+    @keyframes rise {
+      0% { transform: translateY(0) translateX(0); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 0.2; }
+      100% { transform: translateY(-100vh) translateX(30px); opacity: 0; }
+    }
+
+    /* Header */
+    header {
+      position: relative; z-index: 10;
+      background: var(--espresso);
+      padding: 16px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { font-family: 'Righteous', sans-serif; font-size: 1.2rem; color: var(--caramel); letter-spacing: 1px; }
+    .logo span { color: var(--cream); }
+    .header-tag { font-size: 0.7rem; color: rgba(255,255,255,0.4); letter-spacing: 2px; text-transform: uppercase; }
+
+    /* Hero */
+    .hero {
+      position: relative; z-index: 10;
+      text-align: center; padding: 70px 24px 50px;
+      max-width: 680px; margin: 0 auto;
+    }
+    .hero-eyebrow {
+      display: inline-block; background: var(--caramel); color: white;
+      font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase;
+      padding: 5px 14px; margin-bottom: 22px;
+    }
+    h1 {
+      font-family: 'Lora', serif;
+      font-size: clamp(2.2rem, 6vw, 3.8rem);
+      line-height: 1.1; color: var(--espresso); margin-bottom: 18px;
+    }
+    h1 em { font-style: italic; color: var(--caramel); }
+    .hero-sub {
+      font-size: 1rem; color: var(--muted); line-height: 1.7;
+      margin-bottom: 36px; max-width: 480px; margin-left: auto; margin-right: auto;
+    }
+    .hero-meta {
+      display: flex; align-items: center; justify-content: center;
+      gap: 24px; font-size: 0.75rem; color: var(--muted); margin-bottom: 40px; flex-wrap: wrap;
+    }
+    .start-btn {
+      background: var(--espresso); color: var(--cream);
+      font-family: 'Righteous', sans-serif; font-size: 1rem;
+      letter-spacing: 2px; padding: 18px 48px; border: none; cursor: pointer;
+      transition: all 0.2s; position: relative; overflow: hidden;
+    }
+    .start-btn::after {
+      content: ''; position: absolute; inset: 0; background: var(--caramel);
+      transform: translateX(-101%); transition: transform 0.3s ease;
+    }
+    .start-btn:hover::after { transform: translateX(0); }
+    .start-btn span { position: relative; z-index: 1; }
+
+    /* Personalities preview pills */
+    .personalities-preview {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      justify-content: center; margin-bottom: 40px; max-width: 560px;
+      margin-left: auto; margin-right: auto;
+    }
+    .preview-pill {
+      background: var(--white); border: 1px solid var(--steam);
+      padding: 6px 14px; font-size: 0.72rem; color: var(--muted);
+      transition: all 0.15s; cursor: default;
+    }
+    .preview-pill:hover { border-color: var(--caramel); color: var(--caramel); }
+
+    /* Quiz wrap */
+    .quiz-wrap {
+      position: relative; z-index: 10;
+      max-width: 720px; margin: 0 auto;
+      padding: 0 24px 100px; display: none;
+    }
+
+    /* Progress */
+    .progress-bar-wrap { margin-bottom: 32px; }
+    .progress-meta {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 8px;
+    }
+    .progress-label { font-size: 0.7rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+    .progress-frac { font-family: 'Lora', serif; font-size: 0.85rem; color: var(--caramel); }
+    .progress-track { height: 4px; background: var(--steam); border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--caramel); border-radius: 2px; transition: width 0.5s ease; }
+
+    /* Question card */
+    .question-card {
+      background: var(--white); border: 1px solid var(--steam);
+      border-top: 4px solid var(--caramel); padding: 40px; margin-bottom: 20px;
+      animation: fadeSlide 0.4s ease;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .q-number { font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: var(--caramel); margin-bottom: 12px; }
+    .q-emoji { font-size: 2.4rem; margin-bottom: 14px; display: block; }
+    .q-text { font-family: 'Lora', serif; font-size: clamp(1.2rem, 3vw, 1.55rem); line-height: 1.4; color: var(--espresso); margin-bottom: 28px; }
+
+    /* Standard option grid */
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .option-btn {
+      background: var(--foam); border: 2px solid var(--steam);
+      padding: 16px 18px; text-align: left; cursor: pointer;
+      transition: all 0.18s; font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem; line-height: 1.4; color: var(--text);
+      position: relative; overflow: hidden;
+    }
+    .option-btn:hover { border-color: var(--caramel); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(196,125,43,0.15); }
+    .option-btn.selected { border-color: var(--espresso); background: var(--espresso); color: var(--cream); transform: translateY(-2px); }
+    .option-emoji { display: block; font-size: 1.4rem; margin-bottom: 6px; }
+
+    /* Milk grid - 3 columns */
+    .milk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .milk-btn {
+      background: var(--foam); border: 2px solid var(--steam);
+      padding: 18px 12px; text-align: center; cursor: pointer;
+      transition: all 0.18s; font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem; line-height: 1.4; color: var(--text);
+    }
+    .milk-btn:hover { border-color: var(--caramel); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(196,125,43,0.15); }
+    .milk-btn.selected { border-color: var(--espresso); background: var(--espresso); color: var(--cream); }
+    .milk-emoji { display: block; font-size: 1.8rem; margin-bottom: 8px; }
+    .milk-name { font-weight: 500; display: block; margin-bottom: 2px; }
+    .milk-desc { font-size: 0.7rem; opacity: 0.7; }
+
+    /* Sugar dropdown style */
+    .sugar-options { display: flex; flex-direction: column; gap: 8px; }
+    .sugar-btn {
+      background: var(--foam); border: 2px solid var(--steam);
+      padding: 14px 20px; text-align: left; cursor: pointer;
+      transition: all 0.18s; font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem; color: var(--text);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .sugar-btn:hover { border-color: var(--caramel); }
+    .sugar-btn.selected { border-color: var(--espresso); background: var(--espresso); color: var(--cream); }
+    .sugar-left { display: flex; align-items: center; gap: 12px; }
+    .sugar-emoji { font-size: 1.2rem; }
+    .sugar-label { font-weight: 500; }
+    .sugar-desc { font-size: 0.75rem; opacity: 0.7; }
+    .sugar-sweetness {
+      font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase;
+      background: rgba(196,125,43,0.1); color: var(--caramel); padding: 3px 8px;
+    }
+    .sugar-btn.selected .sugar-sweetness { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); }
+
+    /* Results */
+    .result-wrap {
+      position: relative; z-index: 10;
+      max-width: 720px; margin: 0 auto;
+      padding: 0 24px 100px; display: none;
+    }
+    .result-card {
+      padding: 52px 48px; text-align: center;
+      position: relative; overflow: hidden; margin-bottom: 12px;
+      animation: fadeSlide 0.5s ease;
+    }
+    .result-card::before {
+      content: ''; position: absolute; top: -60px; right: -60px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    }
+    .result-badge {
+      display: inline-block; background: rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.2);
+      font-size: 0.6rem; letter-spacing: 3px; text-transform: uppercase;
+      padding: 5px 14px; margin-bottom: 24px; position: relative; z-index: 1;
+    }
+    .result-emoji {
+      font-size: 5rem; display: block; margin-bottom: 20px;
+      position: relative; z-index: 1;
+      animation: bounceIn 0.6s ease 0.2s both;
+    }
+    @keyframes bounceIn {
+      0% { transform: scale(0.3); opacity: 0; }
+      60% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .result-title {
+      font-family: 'Righteous', sans-serif;
+      font-size: clamp(1.6rem, 5vw, 2.6rem);
+      letter-spacing: 1px; margin-bottom: 10px;
+      position: relative; z-index: 1;
+    }
+    .result-subtitle {
+      font-family: 'Lora', serif; font-style: italic;
+      font-size: 1rem; margin-bottom: 24px;
+      position: relative; z-index: 1; opacity: 0.75;
+    }
+    .result-order-tag {
+      display: inline-block; font-size: 0.72rem; letter-spacing: 1px;
+      padding: 6px 16px; margin-bottom: 20px; position: relative; z-index: 1;
+      border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.85);
+    }
+    .result-desc {
+      font-size: 0.95rem; line-height: 1.8; max-width: 480px;
+      margin: 0 auto 28px; position: relative; z-index: 1; opacity: 0.88;
+    }
+    .traits-row {
+      display: flex; justify-content: center; gap: 8px;
+      flex-wrap: wrap; margin-bottom: 28px; position: relative; z-index: 1;
+    }
+    .trait-pill {
+      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+      font-size: 0.7rem; padding: 5px 12px; letter-spacing: 0.5px;
+    }
+    .cafe-rec {
+      background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.12);
+      padding: 18px 22px; margin-bottom: 28px; text-align: left;
+      position: relative; z-index: 1; max-width: 400px;
+      margin-left: auto; margin-right: auto;
+    }
+    .cafe-rec-label { font-size: 0.58rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.6; margin-bottom: 5px; }
+    .cafe-rec-name { font-family: 'Lora', serif; font-size: 1rem; margin-bottom: 3px; }
+    .cafe-rec-sub { font-size: 0.75rem; opacity: 0.55; }
+
+    /* Your order recap */
+    .order-recap {
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+      padding: 16px 22px; margin-bottom: 28px; position: relative; z-index: 1;
+      max-width: 400px; margin-left: auto; margin-right: auto;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .order-recap-icon { font-size: 2rem; }
+    .order-recap-label { font-size: 0.58rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.5; margin-bottom: 3px; }
+    .order-recap-val { font-family: 'Lora', serif; font-size: 0.95rem; }
+
+    .share-row {
+      display: flex; justify-content: center; gap: 10px;
+      flex-wrap: wrap; position: relative; z-index: 1;
+    }
+    .share-btn {
+      font-family: 'DM Sans', sans-serif; font-size: 0.78rem;
+      font-weight: 500; padding: 12px 20px; border: none; cursor: pointer;
+      transition: all 0.15s; display: flex; align-items: center; gap: 8px;
+    }
+    .share-linkedin { background: #0077b5; color: white; }
+    .share-linkedin:hover { background: #006097; transform: translateY(-1px); }
+    .share-copy { background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.2); }
+    .share-copy:hover { background: rgba(255,255,255,0.22); }
+    .share-retake { background: rgba(255,255,255,0.9); color: var(--espresso); }
+    .share-retake:hover { background: white; }
+
+    .stats-strip {
+      background: var(--white); border: 1px solid var(--steam);
+      padding: 24px 32px; display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 20px; text-align: center; margin-bottom: 12px;
+    }
+    .strip-num { font-family: 'Righteous', sans-serif; font-size: 1.8rem; color: var(--caramel); }
+    .strip-label { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+    .footer-credit {
+      text-align: center; padding: 20px;
+      font-size: 0.72rem; color: var(--muted);
+    }
+    .footer-credit a { color: var(--caramel); text-decoration: none; font-weight: 500; }
+
+    @media (max-width: 580px) {
+      .options-grid { grid-template-columns: 1fr; }
+      .milk-grid { grid-template-columns: repeat(2, 1fr); }
+      .question-card { padding: 28px 20px; }
+      .result-card { padding: 36px 20px; }
+      header { padding: 14px 20px; }
+      .stats-strip { grid-template-columns: 1fr; gap: 12px; }
+      .sugar-btn { flex-direction: column; align-items: flex-start; gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="steam-bg" id="steamBg"></div>
+
+<header>
+  <div class="logo">Melbourne <span>Coffee</span> Quiz</div>
+  <div class="header-tag">☕ Est. Fitzroy, 2025</div>
+</header>
+
+<!-- HERO -->
+<div class="hero" id="heroSection">
+  <div class="hero-eyebrow">☕ Melbourne's Most Accurate Coffee Quiz</div>
+  <h1>What Does Your<br><em>Coffee Order</em><br>Say About You?</h1>
+  <p class="hero-sub">8 questions. Brutally honest results. From espresso purists to matcha devotees — find out your Melbourne Coffee Personality.</p>
+
+  <div class="personalities-preview">
+    <div class="preview-pill">🖤 Espresso Purist</div>
+    <div class="preview-pill">☕ Flat White Legend</div>
+    <div class="preview-pill">🌿 Matcha Devotee</div>
+    <div class="preview-pill">🍵 Chai Whisperer</div>
+    <div class="preview-pill">🥛 Oat Latte Visionary</div>
+    <div class="preview-pill">🌀 Chaotic Caffeine Gremlin</div>
+    <div class="preview-pill">⚡ Triple Shot Overachiever</div>
+    <div class="preview-pill">🏭 Laneway Discoverer</div>
+    <div class="preview-pill">🎲 Curious Explorer</div>
+    <div class="preview-pill">🌅 Slow Pour Philosopher</div>
+    <div class="preview-pill">💼 Corporate Coffee Machine</div>
+    <div class="preview-pill">🥥 Coconut Milk Creative</div>
+  </div>
+
+  <div class="hero-meta">
+    <div>⏱ 3 minutes</div>
+    <div>☕ 12 personalities</div>
+    <div>📍 Made in Melbourne</div>
+  </div>
+  <button class="start-btn" onclick="startQuiz()"><span>Find Your Personality →</span></button>
+</div>
+
+<!-- QUIZ -->
+<div class="quiz-wrap" id="quizSection">
+  <div class="progress-bar-wrap">
+    <div class="progress-meta">
+      <div class="progress-label">Your Journey</div>
+      <div class="progress-frac" id="progressFrac">1 of 8</div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:12.5%"></div>
+    </div>
+  </div>
+  <div id="questionContainer"></div>
+</div>
+
+<!-- RESULTS -->
+<div class="result-wrap" id="resultSection">
+  <div class="result-card" id="resultCard"></div>
+  <div class="stats-strip">
+    <div>
+      <div class="strip-num" id="statPersonality">—</div>
+      <div class="strip-label">Your personality type</div>
+    </div>
+    <div>
+      <div class="strip-num" id="statPercent">—</div>
+      <div class="strip-label">of Melburnians match you</div>
+    </div>
+    <div>
+      <div class="strip-num">12</div>
+      <div class="strip-label">total personalities</div>
+    </div>
+  </div>
+  <div class="footer-credit">Made with ☕ in Melbourne · <a href="#" onclick="retakeQuiz()">Retake Quiz</a> · Share with your network</div>
+</div>
+
+<script>
+  // Steam
+  (function() {
+    const bg = document.getElementById('steamBg');
+    for (let i = 0; i < 10; i++) {
+      const p = document.createElement('div');
+      p.className = 'steam-particle';
+      p.style.cssText = `left:${Math.random()*100}%;height:${80+Math.random()*120}px;animation-duration:${8+Math.random()*12}s;animation-delay:${Math.random()*8}s;opacity:${0.2+Math.random()*0.3}`;
+      bg.appendChild(p);
+    }
+  })();
+
+  // ── Questions ──
+  const questions = [
+    {
+      id: 'drink',
+      type: 'grid',
+      emoji: '☕',
+      text: 'First things first — what\'s actually in your cup?',
+      options: [
+        { emoji: '🖤', text: 'Espresso / Long Black', value: 'purist' },
+        { emoji: '☕', text: 'Flat White', value: 'classic' },
+        { emoji: '🌿', text: 'Matcha Latte', value: 'matcha' },
+        { emoji: '🍵', text: 'Chai Latte', value: 'chai' },
+        { emoji: '🥛', text: 'Oat / Alt Milk Latte', value: 'trendy' },
+        { emoji: '🧊', text: 'Iced Coffee / Cold Brew', value: 'adventurous' },
+        { emoji: '☁️', text: 'Cappuccino / Latte', value: 'relaxed' },
+        { emoji: '🎲', text: 'Whatever mood hits me', value: 'chaotic' }
+      ],
+      cols: 4
+    },
+    {
+      id: 'milk',
+      type: 'milk',
+      emoji: '🥛',
+      text: 'Choose your milk. This says everything.',
+      options: [
+        { emoji: '🐄', name: 'Full Cream', desc: 'Classic. Unapologetic.', value: 'classic' },
+        { emoji: '🌾', name: 'Oat Milk', desc: 'The Melbourne staple.', value: 'trendy' },
+        { emoji: '🌰', name: 'Almond Milk', desc: 'Nutty and proud.', value: 'health' },
+        { emoji: '🫘', name: 'Soy Milk', desc: 'OG alt milk. Veteran.', value: 'purist' },
+        { emoji: '🥥', name: 'Coconut Milk', desc: 'Tropical rebel.', value: 'creative' },
+        { emoji: '🌿', name: 'Macadamia', desc: 'Extra. Absolutely extra.', value: 'hipster' },
+        { emoji: '🩷', name: 'Lactose Free', desc: 'Sensible and sorted.', value: 'driven' },
+        { emoji: '🚫', name: 'No Milk', desc: 'Pure. Uncompromising.', value: 'intense' },
+        { emoji: '🤷', name: 'Whatever\'s there', desc: 'Life is short.', value: 'chaotic' }
+      ]
+    },
+    {
+      id: 'sugar',
+      type: 'sugar',
+      emoji: '🍬',
+      text: 'Sugars in your coffee?',
+      options: [
+        { emoji: '🚫', label: 'None', desc: 'Coffee should speak for itself', sweetness: 'Zero sweet', value: 'purist' },
+        { emoji: '½', label: 'Half a sugar', desc: 'Just a whisper of sweetness', sweetness: 'Barely there', value: 'relaxed' },
+        { emoji: '1️⃣', label: '1 sugar', desc: 'The classic balanced choice', sweetness: 'Balanced', value: 'classic' },
+        { emoji: '2️⃣', label: '2 sugars', desc: 'You know what you like', sweetness: 'Sweet', value: 'chaotic' },
+        { emoji: '3️⃣', label: '3 sugars', desc: 'No judgement. None at all.', sweetness: 'Very sweet', value: 'intense' },
+        { emoji: '🍯', label: 'Honey instead', desc: 'Natural, earthy, intentional', sweetness: 'Naturally sweet', value: 'matcha' },
+        { emoji: '🌿', label: 'Stevia / sweetener', desc: 'Sweet but make it healthy', sweetness: 'Health-sweet', value: 'health' },
+        { emoji: '🧁', label: 'Caramel / vanilla syrup', desc: 'Coffee is basically dessert', sweetness: 'Maximum sweet', value: 'trendy' }
+      ]
+    },
+    {
+      id: 'time',
+      type: 'grid',
+      emoji: '⏰',
+      text: 'When\'s your first coffee of the day?',
+      options: [
+        { emoji: '🌅', text: 'Before 7am. Already on it.', value: 'driven' },
+        { emoji: '☀️', text: '7–9am. Normal human hours.', value: 'classic' },
+        { emoji: '🕙', text: '10am+. I ease into it.', value: 'relaxed' },
+        { emoji: '🌙', text: 'Afternoon. I\'m a different breed.', value: 'chaotic' }
+      ],
+      cols: 2
+    },
+    {
+      id: 'cafe',
+      type: 'grid',
+      emoji: '📍',
+      text: 'Your ideal Melbourne café is...',
+      options: [
+        { emoji: '🏭', text: 'Hidden Fitzroy laneway. No sign. You just know.', value: 'hipster' },
+        { emoji: '🌿', text: 'Collingwood warehouse with plants everywhere.', value: 'trendy' },
+        { emoji: '📰', text: 'Old school Carlton spot. Same barista for 10 years.', value: 'classic' },
+        { emoji: '🚀', text: 'Wherever is closest. Coffee is fuel, not fashion.', value: 'driven' },
+        { emoji: '🍃', text: 'That quiet spot with great matcha and crystals.', value: 'matcha' },
+        { emoji: '🧡', text: 'A warm café that does amazing chai and candles.', value: 'chai' }
+      ],
+      cols: 2
+    },
+    {
+      id: 'morning',
+      type: 'grid',
+      emoji: '🌞',
+      text: 'Monday 7:30am. What\'s actually happening?',
+      options: [
+        { emoji: '⚡', text: 'Double shot in hand. No chat. Already crushing it.', value: 'intense' },
+        { emoji: '🧘', text: 'Slow morning ritual. Matcha, journal, breathe.', value: 'matcha' },
+        { emoji: '🫖', text: 'Warming both hands on my chai. Taking it slow.', value: 'chai' },
+        { emoji: '💻', text: 'At my desk. Coffee in hand. Emails already open.', value: 'driven' },
+        { emoji: '😴', text: 'Still horizontal. Coffee is the only reason I exist.', value: 'chaotic' },
+        { emoji: '🚶', text: 'Strolling to my favourite café. No rush. Ever.', value: 'relaxed' }
+      ],
+      cols: 2
+    },
+    {
+      id: 'wrong_order',
+      type: 'grid',
+      emoji: '😳',
+      text: 'Your barista makes your order wrong. You...',
+      options: [
+        { emoji: '😤', text: 'Politely but firmly ask for a redo. Standards exist.', value: 'purist' },
+        { emoji: '🤷', text: 'Drink it anyway. It\'s fine. I\'m fine. Everything\'s fine.', value: 'relaxed' },
+        { emoji: '😅', text: 'Panic internally, say "thanks!", never return.', value: 'chaotic' },
+        { emoji: '🧐', text: 'Ask curious questions. Fascinated by what happened.', value: 'adventurous' }
+      ],
+      cols: 2
+    },
+    {
+      id: 'friday',
+      type: 'grid',
+      emoji: '🎉',
+      text: '4pm Friday. Where are you?',
+      options: [
+        { emoji: '💼', text: 'Still at my desk. Deadlines don\'t care about Fridays.', value: 'driven' },
+        { emoji: '🍻', text: 'Bar. Coffee off. You\'ll find me Monday.', value: 'classic' },
+        { emoji: '📸', text: 'New café in Northcote. Already posting about it.', value: 'hipster' },
+        { emoji: '🧘', text: 'Yoga class or a walk. Weekend reset has begun.', value: 'matcha' },
+        { emoji: '🫖', text: 'Sitting with a chai somewhere cosy and warm.', value: 'chai' },
+        { emoji: '🛋️', text: 'On my couch, coffee in hand, silently judging everyone.', value: 'relaxed' }
+      ],
+      cols: 2
+    }
+  ];
+
+  // ── Personalities ──
+  const personalities = {
+    purist: {
+      title: 'THE ESPRESSO PURIST',
+      subtitle: '"Milk is just a distraction."',
+      emoji: '🖤',
+      bg: '#1a0a00',
+      accent: '#c47d2b',
+      desc: 'You have strong opinions about coffee and zero apologies about it. You\'ve told someone their flat white was "basically dessert" and you meant it. Melbourne\'s specialty coffee scene was literally built for you. You probably own a grinder.',
+      traits: ['Opinionated', 'Disciplined', 'No-nonsense', 'Deeply respected'],
+      cafe: { name: 'Patricia Coffee Brewers', suburb: 'CBD', vibe: 'Standing room only. Serious coffee. Your people.' },
+      order: 'Double espresso, no sugar, served immediately',
+      percent: '13%'
+    },
+    classic: {
+      title: 'THE FLAT WHITE LEGEND',
+      subtitle: '"Melbourne invented this. Don\'t forget it."',
+      emoji: '☕',
+      bg: '#3d1a0a',
+      accent: '#e8a86b',
+      desc: 'You\'re the backbone of Melbourne\'s coffee culture. Reliable, loveable, and deeply underrated. You\'ve had the same order for 8 years and see absolutely no reason to change. Everyone likes you. Even the espresso purists.',
+      traits: ['Dependable', 'Social', 'Warm', 'Quietly confident'],
+      cafe: { name: 'Proud Mary', suburb: 'Collingwood', vibe: 'Legendary. Queue is always worth it.' },
+      order: 'Flat white, full cream milk, one sugar',
+      percent: '24%'
+    },
+    matcha: {
+      title: 'THE MATCHA DEVOTEE',
+      subtitle: '"Coffee? I transcended coffee."',
+      emoji: '🌿',
+      bg: '#1a3a22',
+      accent: '#7ec99a',
+      desc: 'You didn\'t quit coffee, you evolved past it. Your morning matcha ritual is non-negotiable, your skin is glowing, and you genuinely feel sorry for people who need caffeine just to function. You might be onto something. The rest of us are watching nervously.',
+      traits: ['Wellness-forward', 'Intentional', 'Glowing (literally)', 'Quietly superior'],
+      cafe: { name: 'Matcha Mylkbar', suburb: 'St Kilda', vibe: 'Plant-based heaven. Your spiritual home.' },
+      order: 'Ceremonial matcha, oat milk, honey, no sugar',
+      percent: '9%'
+    },
+    chai: {
+      title: 'THE CHAI WHISPERER',
+      subtitle: '"It\'s not just a drink. It\'s a whole vibe."',
+      emoji: '🍵',
+      bg: '#3a1a0a',
+      accent: '#e8956b',
+      desc: 'You chose warmth over hype and spice over bitterness. Your chai order is specific (dirty chai, oat milk, one pump, extra cinnamon) and if a café gets it wrong, you know immediately. You\'re the most emotionally intelligent person in any room.',
+      traits: ['Warm', 'Specific', 'Emotionally intelligent', 'Deeply cosy'],
+      cafe: { name: 'Lune Croissanterie', suburb: 'Fitzroy', vibe: 'Perfect chai, perfect pastry, perfect morning.' },
+      order: 'Dirty chai latte, oat milk, extra cinnamon, half sugar',
+      percent: '11%'
+    },
+    trendy: {
+      title: 'THE OAT LATTE VISIONARY',
+      subtitle: '"Dairy is so 2015."',
+      emoji: '🥛',
+      bg: '#1a3a1a',
+      accent: '#86c986',
+      desc: 'You were ordering oat milk before your café even had it on the menu. You follow three coffee roasters on Instagram, own multiple reusable cups, and have opinions about cold brew that border on spiritual. The future of Melbourne coffee? That\'s you.',
+      traits: ['Forward-thinking', 'Health-conscious', 'Influential', 'Aesthetically gifted'],
+      cafe: { name: 'Brother Baba Budan', suburb: 'CBD', vibe: 'Chairs from the ceiling. Obviously your vibe.' },
+      order: 'Oat latte, no sugar, served in a beautiful cup',
+      percent: '17%'
+    },
+    creative: {
+      title: 'THE COCONUT MILK CREATIVE',
+      subtitle: '"Why be normal when you can be tropical?"',
+      emoji: '🥥',
+      bg: '#1a2a3a',
+      accent: '#6bb8e8',
+      desc: 'You chose coconut milk and you stand by it completely. You probably work in a creative field, have at least one indoor plant named after a musician, and your coffee order is just one expression of your commitment to doing things slightly differently. We love it.',
+      traits: ['Creative', 'Distinctive', 'Zero apologies', 'Genuinely interesting'],
+      cafe: { name: 'Hardware Société', suburb: 'Melbourne CBD', vibe: 'Eclectic. Warm. Creative crowd. Perfect.' },
+      order: 'Coconut milk latte, maybe a syrup, definitely delicious',
+      percent: '7%'
+    },
+    intense: {
+      title: 'THE TRIPLE SHOT OVERACHIEVER',
+      subtitle: '"Sleep is just offline recovery mode."',
+      emoji: '⚡',
+      bg: '#2a0a0a',
+      accent: '#e86b6b',
+      desc: 'You run on caffeine, ambition, and the vague memory of a full night\'s sleep. You\'ve said "I\'ll sleep when I\'m dead" unironically. Your coffee order is aggressive and your to-do list is longer than most people\'s life goals. Honestly, terrifying. Respect.',
+      traits: ['High-achieving', 'Relentless', 'Slightly terrifying', 'Gets things done'],
+      cafe: { name: 'Market Lane Coffee', suburb: 'Prahran', vibe: 'Efficient. Quality. In, out, back to work.' },
+      order: 'Triple espresso, no milk, no sugar, no time to chat',
+      percent: '10%'
+    },
+    relaxed: {
+      title: 'THE SLOW POUR PHILOSOPHER',
+      subtitle: '"The coffee journey is the destination."',
+      emoji: '🌅',
+      bg: '#0a1a2a',
+      accent: '#6b9ee8',
+      desc: 'You treat your morning coffee like a meditation. You\'ve never rushed a cup in your life and look slightly pained when people order takeaway. You know every barista\'s name, their backstory, and probably their dog\'s name too. Melbourne needs more of you.',
+      traits: ['Mindful', 'Genuine', 'Deeply likeable', 'Actually happy'],
+      cafe: { name: 'Everyday Coffee', suburb: 'Fitzroy North', vibe: 'Unhurried. Beautiful. Stay as long as you like.' },
+      order: 'Single origin pour over, black, sipped slowly with intention',
+      percent: '14%'
+    },
+    driven: {
+      title: 'THE CORPORATE COFFEE MACHINE',
+      subtitle: '"It\'s not coffee, it\'s infrastructure."',
+      emoji: '💼',
+      bg: '#0a1a3a',
+      accent: '#6b8ee8',
+      desc: 'Coffee is a tool. A finely calibrated productivity tool you deploy with military precision. You\'ve calculated exactly how many cups maximise your output. You\'re probably reading this between meetings. That\'s okay. We see you. Keep going.',
+      traits: ['Strategic', 'Efficient', 'Ambitious', 'Caffeinated to perfection'],
+      cafe: { name: 'St. Ali', suburb: 'South Melbourne', vibe: 'Serious coffee. Professional crowd. You belong here.' },
+      order: 'Large flat white, full cream, one sugar, takeaway cup',
+      percent: '15%'
+    },
+    hipster: {
+      title: 'THE LANEWAY DISCOVERER',
+      subtitle: '"You\'ve probably never heard of it."',
+      emoji: '🏭',
+      bg: '#1a0a2a',
+      accent: '#c86be8',
+      desc: 'You found that café before it had an Instagram. You\'ve been to every hidden rooftop, alley espresso bar and pop-up in Melbourne and your recommendations are gold. The city\'s best-kept coffee secrets are not secrets to you.',
+      traits: ['Adventurous', 'Culturally plugged-in', 'Tastemaker', 'Mysteriously cool'],
+      cafe: { name: 'Sensory Lab', suburb: 'Collins St', vibe: 'Understated. Exceptional. The real Melbourne.' },
+      order: 'Single origin filter, macadamia milk, no sugar',
+      percent: '11%'
+    },
+    chaotic: {
+      title: 'THE BEAUTIFULLY CHAOTIC CAFFEINE GREMLIN',
+      subtitle: '"I\'ll sleep when things calm down. So never."',
+      emoji: '🌀',
+      bg: '#1a1a0a',
+      accent: '#e8c86b',
+      desc: 'Your coffee order changes daily, your sleep schedule is a myth, and your desk has at least two half-finished cups right now. Somehow you get everything done. People are genuinely unsure how. You are Melbourne\'s chaotic energy personified. We love you.',
+      traits: ['Unpredictable', 'Creative', 'Surprisingly productive', 'Unhinged (affectionate)'],
+      cafe: { name: 'Batch Brewing Co', suburb: 'Fitzroy', vibe: 'Loud. Fun. Chaotic. Perfect for your energy.' },
+      order: 'Varies daily. Sometimes twice daily. You do what you want.',
+      percent: '8%'
+    },
+    adventurous: {
+      title: 'THE CURIOUS COFFEE EXPLORER',
+      subtitle: '"I\'ll try anything once. Twice if it\'s good."',
+      emoji: '🎲',
+      bg: '#0a2a2a',
+      accent: '#6be8c8',
+      desc: 'You\'ve had a yuzu espresso tonic. You\'ve done the Ethiopian pour-over flight. You once ordered the "chef\'s choice" coffee and got something with lavender and zero regrets. Melbourne\'s experimental coffee scene is your playground.',
+      traits: ['Open-minded', 'Spontaneous', 'Great company', 'Full of surprises'],
+      cafe: { name: 'Dukes Coffee Roasters', suburb: 'Flinders Lane', vibe: 'Always something new. Always worth trying.' },
+      order: 'Whatever the specials board says today',
+      percent: '9%'
+    }
+  };
+
+  // ── State ──
+  let currentQ = 0;
+  let scores = {};
+  let userMilk = '';
+  let userSugar = '';
+  let userDrink = '';
+
+  function startQuiz() {
+    document.getElementById('heroSection').style.display = 'none';
+    document.getElementById('quizSection').style.display = 'block';
+    renderQuestion();
+  }
+
+  function renderQuestion() {
+    const q = questions[currentQ];
+    const pct = ((currentQ + 1) / questions.length) * 100;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressFrac').textContent = `${currentQ + 1} of ${questions.length}`;
+
+    const container = document.getElementById('questionContainer');
+
+    let optionsHTML = '';
+
+    if (q.type === 'milk') {
+      optionsHTML = `<div class="milk-grid">
+        ${q.options.map(opt => `
+          <button class="milk-btn" onclick="selectMilk('${opt.value}', this, '${opt.name}')">
+            <span class="milk-emoji">${opt.emoji}</span>
+            <span class="milk-name">${opt.name}</span>
+            <span class="milk-desc">${opt.desc}</span>
+          </button>
+        `).join('')}
+      </div>`;
+    } else if (q.type === 'sugar') {
+      optionsHTML = `<div class="sugar-options">
+        ${q.options.map(opt => `
+          <button class="sugar-btn" onclick="selectSugar('${opt.value}', this, '${opt.label}')">
+            <div class="sugar-left">
+              <div class="sugar-emoji">${opt.emoji}</div>
+              <div>
+                <div class="sugar-label">${opt.label}</div>
+                <div class="sugar-desc">${opt.desc}</div>
+              </div>
+            </div>
+            <div class="sugar-sweetness">${opt.sweetness}</div>
+          </button>
+        `).join('')}
+      </div>`;
+    } else {
+      const cols = q.cols === 4 ? 'options-grid' : 'options-grid';
+      const gridStyle = q.cols === 4 ? 'grid-template-columns: repeat(4,1fr)' : 'grid-template-columns: repeat(2,1fr)';
+      optionsHTML = `<div class="${cols}" style="${gridStyle}">
+        ${q.options.map(opt => `
+          <button class="option-btn" onclick="selectAnswer('${opt.value}', this, '${q.id}', '${opt.text.replace(/'/g,"\\'")}')">
+            <span class="option-emoji">${opt.emoji}</span>
+            <span class="option-text">${opt.text}</span>
+          </button>
+        `).join('')}
+      </div>`;
+    }
+
+    container.innerHTML = `
+      <div class="question-card">
+        <div class="q-number">Question ${currentQ + 1} of ${questions.length}</div>
+        <span class="q-emoji">${q.emoji}</span>
+        <div class="q-text">${q.text}</div>
+        ${optionsHTML}
+      </div>`;
+
+    // Responsive grid for drink question
+    if (q.id === 'drink') {
+      setTimeout(() => {
+        const grid = container.querySelector('.options-grid');
+        if (grid && window.innerWidth < 580) {
+          grid.style.gridTemplateColumns = 'repeat(2,1fr)';
+        }
+      }, 10);
+    }
+  }
+
+  function selectAnswer(value, btn, qId, text) {
+    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    scores[value] = (scores[value] || 0) + 1;
+    if (qId === 'drink') userDrink = text;
+    setTimeout(nextQuestion, 350);
+  }
+
+  function selectMilk(value, btn, name) {
+    document.querySelectorAll('.milk-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    scores[value] = (scores[value] || 0) + 1;
+    userMilk = name;
+    setTimeout(nextQuestion, 350);
+  }
+
+  function selectSugar(value, btn, label) {
+    document.querySelectorAll('.sugar-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    scores[value] = (scores[value] || 0) + 1;
+    userSugar = label;
+    setTimeout(nextQuestion, 350);
+  }
+
+  function nextQuestion() {
+    currentQ++;
+    if (currentQ < questions.length) {
+      renderQuestion();
+    } else {
+      showResult();
+    }
+  }
+
+  function showResult() {
+    document.getElementById('quizSection').style.display = 'none';
+    document.getElementById('resultSection').style.display = 'block';
+
+    const winner = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+    const p = personalities[winner] || personalities.classic;
+
+    document.getElementById('statPersonality').textContent = winner.toUpperCase();
+    document.getElementById('statPercent').textContent = p.percent;
+
+    const orderRecap = userDrink
+      ? `<div class="order-recap">
+          <div class="order-recap-icon">${p.emoji}</div>
+          <div>
+            <div class="order-recap-label">Your custom order</div>
+            <div class="order-recap-val">${userDrink}${userMilk ? ' · ' + userMilk + ' milk' : ''}${userSugar ? ' · ' + userSugar + ' sugar' : ''}</div>
+          </div>
+        </div>`
+      : '';
+
+    document.getElementById('resultCard').style.background = p.bg;
+    document.getElementById('resultCard').style.color = 'white';
+
+    document.getElementById('resultCard').innerHTML = `
+      <div class="result-badge">☕ Your Melbourne Coffee Personality</div>
+      <span class="result-emoji">${p.emoji}</span>
+      <div class="result-title" style="color:${p.accent}">${p.title}</div>
+      <div class="result-subtitle">${p.subtitle}</div>
+      ${orderRecap}
+      <div class="result-desc">${p.desc}</div>
+      <div class="traits-row">
+        ${p.traits.map(t => `<div class="trait-pill">${t}</div>`).join('')}
+      </div>
+      <div class="cafe-rec">
+        <div class="cafe-rec-label">☕ Your Melbourne Café Match</div>
+        <div class="cafe-rec-name">${p.cafe.name} — ${p.cafe.suburb}</div>
+        <div class="cafe-rec-sub">${p.cafe.vibe}</div>
+      </div>
+      <div class="share-row">
+        <button class="share-btn share-linkedin" onclick="shareLinkedIn('${p.title}', '${p.subtitle}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          Share on LinkedIn
+        </button>
+        <button class="share-btn share-copy" onclick="copyResult('${p.title}', '${p.subtitle}')">📋 Copy Result</button>
+        <button class="share-btn share-retake" onclick="retakeQuiz()">↺ Retake</button>
+      </div>
+    `;
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function shareLinkedIn(title, subtitle) {
+    const milkLine = userMilk ? ` with ${userMilk} milk` : '';
+    const sugarLine = userSugar ? `, ${userSugar} sugar` : '';
+    const text = `I just took the Melbourne Coffee Personality Quiz ☕\n\nMy result: ${title}\n${subtitle}\n\nMy order: ${userDrink || 'coffee'}${milkLine}${sugarLine}\n\nTake the quiz and tell me your result 👇\n\n#Melbourne #Coffee #MelbourneCoffee`;
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://melbcoffeequiz.com')}&summary=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  }
+
+  function copyResult(title, subtitle) {
+    const milkLine = userMilk ? ` with ${userMilk} milk` : '';
+    const sugarLine = userSugar ? `, ${userSugar} sugar` : '';
+    const text = `I just took the Melbourne Coffee Personality Quiz ☕\n\nMy result: ${title}\n${subtitle}\n\nMy order: ${userDrink || 'coffee'}${milkLine}${sugarLine}\n\nTake the quiz → melbcoffeequiz.com\n\n#Melbourne #Coffee #MelbourneCoffee`;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = event.target.closest('.share-btn');
+      const orig = btn.innerHTML;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.innerHTML = orig, 2000);
+    });
+  }
+
+  function retakeQuiz() {
+    currentQ = 0; scores = {}; userMilk = ''; userSugar = ''; userDrink = '';
+    document.getElementById('resultSection').style.display = 'none';
+    document.getElementById('heroSection').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
