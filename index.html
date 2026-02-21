@@ -667,6 +667,18 @@
       cafe: { name: 'Dukes Coffee Roasters', suburb: 'Flinders Lane', vibe: 'Always something new. Always worth trying.' },
       order: 'Whatever the specials board says today',
       percent: '9%'
+    },
+    health: {
+      title: 'THE WELLNESS COFFEE CONVERT',
+      subtitle: '"My coffee is basically a superfood."',
+      emoji: '🌱',
+      bg: '#1a2a1a',
+      accent: '#7ec97e',
+      desc: 'You\'ve done the research. Every ingredient in your cup was a conscious decision. Almond milk, stevia, maybe some collagen — your order sounds like a wellness podcast and tastes like intentional living. You\'re not avoiding things; you\'re upgrading everything.',
+      traits: ['Health-conscious', 'Intentional', 'Research-driven', 'Quietly smug (but nicely)'],
+      cafe: { name: 'Matcha Mylkbar', suburb: 'St Kilda', vibe: 'Plant-based, clean, and exactly your vibe.' },
+      order: 'Almond milk latte, stevia, served with purpose',
+      percent: '8%'
     }
   };
 
@@ -719,7 +731,7 @@
         `).join('')}
       </div>`;
     } else {
-      const cols = q.cols === 4 ? 'options-grid' : 'options-grid';
+      const cols = 'options-grid';
       const gridStyle = q.cols === 4 ? 'grid-template-columns: repeat(4,1fr)' : 'grid-template-columns: repeat(2,1fr)';
       optionsHTML = `<div class="${cols}" style="${gridStyle}">
         ${q.options.map(opt => `
@@ -793,12 +805,14 @@
     document.getElementById('statPersonality').textContent = winner.toUpperCase();
     document.getElementById('statPercent').textContent = p.percent;
 
+    const milkDisplay = (userMilk && userMilk !== 'No Milk') ? ' · ' + userMilk + ' milk' : '';
+    const sugarDisplay = (userSugar && userSugar !== 'None') ? ' · ' + userSugar + ' sugar' : '';
     const orderRecap = userDrink
       ? `<div class="order-recap">
           <div class="order-recap-icon">${p.emoji}</div>
           <div>
             <div class="order-recap-label">Your custom order</div>
-            <div class="order-recap-val">${userDrink}${userMilk ? ' · ' + userMilk + ' milk' : ''}${userSugar ? ' · ' + userSugar + ' sugar' : ''}</div>
+            <div class="order-recap-val">${userDrink}${milkDisplay}${sugarDisplay}</div>
           </div>
         </div>`
       : '';
@@ -826,7 +840,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
           Share on LinkedIn
         </button>
-        <button class="share-btn share-copy" onclick="copyResult('${p.title}', '${p.subtitle}')">📋 Copy Result</button>
+        <button class="share-btn share-copy" onclick="copyResult(event, '${p.title}', '${p.subtitle}')">📋 Copy Result</button>
         <button class="share-btn share-retake" onclick="retakeQuiz()">↺ Retake</button>
       </div>
     `;
@@ -835,19 +849,19 @@
   }
 
   function shareLinkedIn(title, subtitle) {
-    const milkLine = userMilk ? ` with ${userMilk} milk` : '';
-    const sugarLine = userSugar ? `, ${userSugar} sugar` : '';
+    const milkLine = (userMilk && userMilk !== 'No Milk') ? ` with ${userMilk} milk` : '';
+    const sugarLine = (userSugar && userSugar !== 'None') ? `, ${userSugar} sugar` : '';
     const text = `I just took the Melbourne Coffee Personality Quiz ☕\n\nMy result: ${title}\n${subtitle}\n\nMy order: ${userDrink || 'coffee'}${milkLine}${sugarLine}\n\nTake the quiz and tell me your result 👇\n\n#Melbourne #Coffee #MelbourneCoffee`;
     const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://melbcoffeequiz.com')}&summary=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   }
 
-  function copyResult(title, subtitle) {
-    const milkLine = userMilk ? ` with ${userMilk} milk` : '';
-    const sugarLine = userSugar ? `, ${userSugar} sugar` : '';
+  function copyResult(evt, title, subtitle) {
+    const milkLine = (userMilk && userMilk !== 'No Milk') ? ` with ${userMilk} milk` : '';
+    const sugarLine = (userSugar && userSugar !== 'None') ? `, ${userSugar} sugar` : '';
     const text = `I just took the Melbourne Coffee Personality Quiz ☕\n\nMy result: ${title}\n${subtitle}\n\nMy order: ${userDrink || 'coffee'}${milkLine}${sugarLine}\n\nTake the quiz → melbcoffeequiz.com\n\n#Melbourne #Coffee #MelbourneCoffee`;
     navigator.clipboard.writeText(text).then(() => {
-      const btn = event.target.closest('.share-btn');
+      const btn = evt.target.closest('.share-btn');
       const orig = btn.innerHTML;
       btn.textContent = '✓ Copied!';
       setTimeout(() => btn.innerHTML = orig, 2000);
